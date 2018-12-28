@@ -46,7 +46,7 @@ def fetch_tnt():
         page_req = slow_get(tnt_url)
         episode = BeautifulSoup(page_req.content, 'lxml')
         h2 = episode.find('h2')
-        title = h2.get('title')
+        title = h2.text
         audio = TNT_AUDIO_URL.format(episode_number)
         tnt_episodes.append({
             'number': episode_number,
