@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+
+import argparse
+from datetime import date
+import json
+import os.path
+import random
+import time
+
+from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
+import lxml.html
+import requests
+
+
+# DTNS episodes are fetched a page at a time.
+DTNS_CATEGORY_URL = 'http://www.dailytechnewsshow.com/category/episode/'
+# TNT episodes are fetched individually to get the title.
+TNT_EPISODE_URL = 'https://twit.tv/shows/tech-news-today/episodes/'
+# Buzz Out Loud has to be fetched by month.
+BOL_WIKI_URL = 'http://buzzoutloud.wikia.com/wiki/Episode_Guide_-_'
+
+
+def slow_get(url):
+    """Slowly fetch resources to not hammer a remote site."""
+    req = requests.get(url)
+    delay = random.uniform(0.2, 3)
+    time.sleep(delay)
+    return req
+
+def fetch_dtns():
+    """Fetch every Daily Tech News Show episode to get the titles."""
+
+    # Fetch the first page of the category archive, determine how many pages
+    # are in the archive, then get all of those pages.
+
+
+def fetch_tnt():
+    """Fetch every Tech News Today show to get the titles."""
+    # Tom left after episode 912.
+    tom_episodes = range(913)
+    for episode_number in tom_episodes:
+        tnt_url = TNT_EPISODE_URL + str(episode_number)
+        print("Fetching TNT episode %d" % episode_number)
+
+
+def fetch_bol():
+    """Fetch every Buzz Out Loud episode to get the titles."""
+    # Tom left after episode 1228 on May 14, 2010.
+    month = date(2005, 4, 1)
+    next_month = relativedelta(months=1)
+    end_month = date(2010, 5, 14)
+    bol_episodes = []
+    while month <= end_month:
+        # The URLs are in English so this script must be run with either an
+        # English locale or the C locale.
+        if month.year != 2005 or month.month != 4:
+            bol_url = BOL_WIKI_URL + month.strftime('%B_%Y')
+        else:
+            # Fetch first month separately because it's in wikia as two months.
+            bol_url = BOL_WIKI_URL + 'March/April_2005'
+        print("Fetching BOL wikia page for %s" % str(month))
+        page_req = slow_get(bol_url)
+        wiki_page = BeautifulSoup(page_req.content, 'lxml')
+        episodes = wiki_page.find_all('tr')
+        for episode in episodes:
+            links = episode.find_all('a')
+            # The header for each page doesn't have any links.
+            if not links:
+                continue
+            first_column = episode.find('td')
+            # The rows with episode information have five columns so the
+            # description has to span those five columns. Skip the description.
+            if first_column.has_attr('colspan') and first_column.get('colspan') == '5':
+                continue
+            number_links = len(links)
+            if number_links == 3 or number_links == 4:
+                number = links[0].text
+                title = links[1].text
+                audio_file = links[-1].get('href')
+            else:
+                print("Found %d links instead of expected 3 or 4" % number_links)
+                continue
+            if number.isdigit():
+                number = int(number)
+            if isinstance(number, int) and number > 1228:
+                break
+            bol_episodes.append({
+                'number': number,
+                'title': title,
+                'download': audio_file,
+            })
+        month = month + next_month
+    return bol_episodes
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Fetch tech show titles")
+    parser.add_argument('--bol', action='store_true', default=False,
+                        help="Fetch Buzz Out Loud episodes.")
+    parser.add_argument('--tnt', action='store_true', default=False,
+                        help="Fetch Tech News Today episodes.")
+    parser.add_argument('--dtns', action='store_true', default=False,
+                        help="Fetch Daily Tech News Show episodes.")
+    parser.add_argument('--output', default='titles.json',
+                        help="Output file for the titles.")
+    args = parser.parse_args()
+
+    if os.path.exists(args.output):
+        with open(args.output, 'r') as input:
+            episodes = json.load(input)
+    else:
+        episodes = {}
+
+    if args.bol:
+        episodes['buzzoutloud'] = fetch_bol()
+    if args.tnt:
+        episodes['technewstoday'] = fetch_tnt()
+    if args.dtns:
+        episodes['dailytechnewsshow'] = fetch_dtns()
+
+    with open(args.output, 'w') as output:
+        json.dump(episodes, output)
+
+
+if __name__ == '__main__':
+    main()
