@@ -71,7 +71,7 @@ def fetch_dtns():
             dtns_episodes.append({
                 'number': episode_number,
                 'title': raw_title,
-                'date': air_date,
+                'date': air_date.strftime('%Y-%m-%d'),
                 'download': audio,
             })
     return dtns_episodes
