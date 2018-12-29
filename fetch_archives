@@ -95,7 +95,11 @@ def fetch_bol():
                 number = links[0].text
                 title = links[1].text
                 audio_file = links[-1].get('href')
-                air_date = parser.parse(columns[2].text)
+                try:
+                    episode_date = parser.parse(columns[2].text)
+                    air_date = episode_date.strftime('%Y-%m-%d')
+                except ValueError:
+                    air_date = None
             else:
                 print("Found %d links instead of expected 3 or 4" % number_links)
                 continue
@@ -106,7 +110,7 @@ def fetch_bol():
             bol_episodes.append({
                 'number': number,
                 'title': title,
-                'date': air_date.strftime('%Y-%m-%d'),
+                'date': air_date,
                 'download': audio_file,
             })
         month = month + next_month
