@@ -5,6 +5,7 @@ from datetime import date
 import json
 import os.path
 import random
+import re
 import time
 
 from bs4 import BeautifulSoup
@@ -31,9 +32,49 @@ def slow_get(url):
 
 def fetch_dtns():
     """Fetch every Daily Tech News Show episode to get the titles."""
-
     # Fetch the first page of the category archive, determine how many pages
     # are in the archive, then get all of those pages.
+    category_req = slow_get(DTNS_CATEGORY_URL)
+    category_start = BeautifulSoup(category_req.content, 'lxml')
+    # First element is the next page, second element is the last page, third
+    # element the "Next" link.
+    page_nav = category_start.find_all('a', class_='page-numbers')
+    category_pages = int(page_nav[1].text)
+    dtns_number = re.compile(r'DTNS (\d+)')
+    dtns_episodes = []
+    for page in range(category_pages+1):
+        print("Fetching DTNS page %d" % page)
+        if page > 0:
+            page_req = slow_get(DTNS_CATEGORY_URL + 'page/%d/' % page)
+            archive_page = BeautifulSoup(page_req.content, 'lxml')
+        else:
+            archive_page = category_start
+        episodes = archive_page.find_all('article')
+        for episode in episodes:
+            h1 = episode.find('h1')
+            raw_title = h1.text
+            episode_match = dtns_number.search(raw_title)
+            if episode_match:
+                episode_number = int(episode_match.group(1))
+            # The "time" element had a "datetime" attribute that is the exact
+            # time the episode was posted. We only need the date however and
+            # that's present in the text.
+            post_date = episode.find('time')
+            air_date = parser.parse(post_date.text)
+            links = episode.find_all('a')
+            audio = None
+            for link in links:
+                link_dest = link.get('href')
+                if link_dest and link_dest.endswith('.mp3'):
+                    audio = link_dest
+                    break
+            dtns_episodes.append({
+                'number': episode_number,
+                'title': raw_title,
+                'date': air_date,
+                'download': audio,
+            })
+    return dtns_episodes
 
 
 def fetch_tnt():
