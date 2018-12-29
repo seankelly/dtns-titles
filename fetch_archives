@@ -56,6 +56,10 @@ def fetch_dtns():
             episode_match = dtns_number.search(raw_title)
             if episode_match:
                 episode_number = int(episode_match.group(1))
+                start = episode_match.start()
+                end = episode_match.end()
+                raw_title = raw_title[0:start] + raw_title[end:]
+                title = raw_title.strip(' -–')
             # The "time" element had a "datetime" attribute that is the exact
             # time the episode was posted. We only need the date however and
             # that's present in the text.
@@ -70,7 +74,7 @@ def fetch_dtns():
                     break
             dtns_episodes.append({
                 'number': episode_number,
-                'title': raw_title,
+                'title': title,
                 'date': air_date.strftime('%Y-%m-%d'),
                 'download': audio,
             })
