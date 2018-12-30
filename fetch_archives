@@ -42,7 +42,8 @@ def fetch_dtns():
     category_pages = int(page_nav[1].text)
     dtns_number = re.compile(r'DTNS (\d+)')
     dtns_episodes = []
-    for page in range(category_pages+1):
+    # Go backwards to have the first entry be the first episode.
+    for page in range(category_pages, -1, -1):
         print("Fetching DTNS page %d" % page)
         if page > 0:
             page_req = slow_get(DTNS_CATEGORY_URL + 'page/%d/' % page)
@@ -50,7 +51,7 @@ def fetch_dtns():
         else:
             archive_page = category_start
         episodes = archive_page.find_all('article')
-        for episode in episodes:
+        for episode in reversed(episodes):
             h1 = episode.find('h1')
             raw_title = h1.text
             episode_match = dtns_number.search(raw_title)
@@ -60,6 +61,9 @@ def fetch_dtns():
                 end = episode_match.end()
                 raw_title = raw_title[0:start] + raw_title[end:]
                 title = raw_title.strip(' -–')
+            else:
+                print("Couldn't find episode number in %s" % raw_title)
+                continue
             # The "time" element had a "datetime" attribute that is the exact
             # time the episode was posted. We only need the date however and
             # that's present in the text.
