@@ -49,8 +49,8 @@
         status_element.innerText = message;
     }
 
-    function search_titles(ev) {
-        var search_input = ev.target;
+    function search_titles() {
+        var search_input = document.getElementById("title-query");
         var query = search_input.value;
         if (query.length < MINIMUM_QUERY_LENGTH) {
             return;
@@ -146,6 +146,11 @@
 
         var search_input = document.getElementById("title-query");
         search_input.addEventListener('input', search_titles);
+
+        var query_options = document.querySelectorAll('input[name=query-type]');
+        for (var query_option of query_options) {
+            query_option.addEventListener('change', search_titles);
+        }
     }
 
     init();
