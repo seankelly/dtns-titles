@@ -83,6 +83,9 @@
                 query = query_re;
                 break;
             case "wildcard-any":
+                compare_fn = query_wildcard_any;
+                var query_words = query_upper.split(/\s+/);
+                query = query_words;
                 break;
             default:
                 console.log("Unknown query type.");
@@ -112,6 +115,17 @@
         var title = episode.loose;
         var result = title.search(query);
         return result >= 0;
+    }
+
+    function query_wildcard_any(queries, episode) {
+        var title = episode.loose;
+        var matched = true;
+        for (var query of queries) {
+            if (title.indexOf(query) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function add_result(episode) {
