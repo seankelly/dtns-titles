@@ -66,7 +66,7 @@
         var compare_fn = null;
         switch (query_type) {
             case "loose":
-                compare_fn = query_type_loose
+                compare_fn = query_type_loose;
                 break;
             case "exact":
                 break;
