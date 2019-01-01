@@ -55,6 +55,7 @@
         if (query.length < MINIMUM_QUERY_LENGTH) {
             return;
         }
+        var query_upper = query.toUpperCase();
 
         var query_option = document.querySelector('input[name="query-type"]:checked');
         if (!query_option) {
@@ -69,12 +70,13 @@
                 break;
             case "loose":
                 compare_fn = query_type_loose;
+                query = query_upper;
                 break;
             case "wildcard":
                 compare_fn = query_wildcard;
                 // Convert query from a string into a regex with globbing
                 // between the words.
-                var query_words = query.toUpperCase().split(/\s+/);
+                var query_words = query_upper.split(/\s+/);
                 var query_words_re = query_words.join('.*?');
                 var query_re = new RegExp(query_words_re);
                 query = query_re;
@@ -101,8 +103,7 @@
 
     function query_type_loose(query, episode) {
         var title = episode.loose;
-        var query_upper = query.toUpperCase();
-        var result = title.indexOf(query_upper);
+        var result = title.indexOf(query);
         return result >= 0;
     }
 
