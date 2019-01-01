@@ -68,6 +68,7 @@
         var compare_fn = null;
         switch (query_type) {
             case "exact":
+                compare_fn = query_type_exact;
                 break;
             case "loose":
                 compare_fn = query_type_loose;
@@ -103,6 +104,12 @@
                 add_result(episode);
             }
         }
+    }
+
+    function query_type_exact(query, episode) {
+        var title = episode.exact;
+        var result = title.indexOf(query);
+        return result >= 0;
     }
 
     function query_type_loose(query, episode) {
