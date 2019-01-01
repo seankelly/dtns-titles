@@ -102,8 +102,7 @@
     function query_type_loose(query, episode) {
         var title = episode.loose;
         var query_upper = query.toUpperCase();
-        var title_upper = title.toUpperCase();
-        var result = title_upper.indexOf(query_upper);
+        var result = title.indexOf(query_upper);
         return result >= 0;
     }
 
