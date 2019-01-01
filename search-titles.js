@@ -7,6 +7,9 @@
         dailytechnewsshow: "DTNS",
     };
 
+    // The title data, unmanipulated.
+    var raw_titles = null;
+    // Processed title data to make searching easier.
     var titles = null;
 
     function loaded_titles() {
@@ -15,8 +18,30 @@
             return;
         }
 
-        titles = this.response;
+        raw_titles = this.response;
+        titles = process_titles(raw_titles);
         update_status("");
+    }
+
+    function process_titles(raw_titles) {
+        var titles = new Array();
+        var punct_re = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g;
+        var spaces_re = /\s+/g;
+        for (var show in raw_titles) {
+            for (var i in raw_titles[show]) {
+                var episode = raw_titles[show][i];
+                var title = episode.title;
+                var title_loose = title.replace(punct_re, '').replace(spaces_re, ' ');
+                var episode_data = {
+                    loose: title_loose.toUpperCase(),
+                    // These keys are so the original entry can be found again.
+                    _show: show,
+                    _index: i,
+                };
+                titles.push(episode_data);
+            }
+        }
+        return titles;
     }
 
     function update_status(message) {
@@ -60,42 +85,41 @@
         }
 
         clear_results();
-        for (var show in titles) {
-            for (var i in titles[show]) {
-                var episode = titles[show][i];
-                if (compare_fn(query, episode.title)) {
-                    add_result(show, episode);
-                }
+        for (var episode of titles) {
+            if (compare_fn(query, episode)) {
+                add_result(episode);
             }
         }
     }
 
-    function query_type_loose(query, title) {
+    function query_type_loose(query, episode) {
+        var title = episode.loose;
         var query_upper = query.toUpperCase();
         var title_upper = title.toUpperCase();
         var result = title_upper.indexOf(query_upper);
         return result >= 0;
     }
 
-    function add_result(show, episode) {
+    function add_result(episode) {
+        var episode_data = raw_titles[episode._show][episode._index];
         var results = document.getElementById("results");
         var fragment = document.createDocumentFragment();
         var row = document.createElement("tr");
         fragment.appendChild(row);
         // episode number
         var number = document.createElement("td");
-        number.innerText = SHOW_MAP[show] + " " + episode.number;
+        number.innerText = SHOW_MAP[episode._show] + " " + episode_data.number;
         // episode title
         var title = document.createElement("td");
-        title.innerText = episode.title;
+        title.innerText = episode_data.title;
         // episode date
         var date = document.createElement("td");
-        date.innerText = episode.date;
+        date.innerText = episode_data.date;
         // episode audio link
         var audio = document.createElement("td");
         var link = document.createElement("a");
         link.innerText = "Download";
-        link.href = episode.download;
+        link.href = episode_data.download;
         audio.appendChild(link);
 
         row.appendChild(number);
