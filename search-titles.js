@@ -33,6 +33,7 @@
                 var title = episode.title;
                 var title_loose = title.replace(punct_re, '').replace(spaces_re, ' ');
                 var episode_data = {
+                    exact: title,
                     loose: title_loose.toUpperCase(),
                     // These keys are so the original entry can be found again.
                     _show: show,
