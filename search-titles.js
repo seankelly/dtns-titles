@@ -65,12 +65,19 @@
 
         var compare_fn = null;
         switch (query_type) {
+            case "exact":
+                break;
             case "loose":
                 compare_fn = query_type_loose;
                 break;
-            case "exact":
-                break;
             case "wildcard":
+                compare_fn = query_wildcard;
+                // Convert query from a string into a regex with globbing
+                // between the words.
+                var query_words = query.toUpperCase().split(/\s+/);
+                var query_words_re = query_words.join('.*?');
+                var query_re = new RegExp(query_words_re);
+                query = query_re;
                 break;
             case "wildcard-any":
                 break;
@@ -97,6 +104,12 @@
         var query_upper = query.toUpperCase();
         var title_upper = title.toUpperCase();
         var result = title_upper.indexOf(query_upper);
+        return result >= 0;
+    }
+
+    function query_wildcard(query, episode) {
+        var title = episode.loose;
+        var result = title.search(query);
         return result >= 0;
     }
 
