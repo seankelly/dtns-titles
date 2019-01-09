@@ -30,6 +30,19 @@ def slow_get(url):
     time.sleep(delay)
     return req
 
+
+def dtns_extra_title(dtns_number, raw_title):
+    """Extract the DTNS episode number and title from the full title."""
+    episode_match = dtns_number.search(raw_title)
+    if episode_match:
+        episode_number = int(episode_match.group(1))
+        start = episode_match.start()
+        end = episode_match.end()
+        raw_title = raw_title[0:start] + raw_title[end:]
+        title = raw_title.strip(' -–')
+        return episode_number, title
+
+
 def fetch_dtns():
     """Fetch every Daily Tech News Show episode to get the titles."""
     # Fetch the first page of the category archive, determine how many pages
@@ -55,12 +68,9 @@ def fetch_dtns():
             h1 = episode.find('h1')
             raw_title = h1.text
             episode_match = dtns_number.search(raw_title)
-            if episode_match:
-                episode_number = int(episode_match.group(1))
-                start = episode_match.start()
-                end = episode_match.end()
-                raw_title = raw_title[0:start] + raw_title[end:]
-                title = raw_title.strip(' -–')
+            dtns_title = dtns_extra_title(dtns_number, raw_title)
+            if dtns_title:
+                episode_number, title = dtns_title
             else:
                 print("Couldn't find episode number in %s" % raw_title)
                 continue
