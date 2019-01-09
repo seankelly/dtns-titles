@@ -50,6 +50,11 @@
         status_element.innerText = message;
     }
 
+    function update_results_count(count) {
+        var count_element = document.getElementById("results-count");
+        count_element.innerText = count;
+    }
+
     function search_titles() {
         var search_input = document.getElementById("title-query");
         var query = search_input.value;
@@ -99,11 +104,14 @@
         }
 
         clear_results();
+        var found = 0;
         for (var episode of titles) {
             if (compare_fn(query, episode)) {
                 add_result(episode);
+                found++;
             }
         }
+        update_results_count(found);
     }
 
     function query_type_exact(query, episode) {
