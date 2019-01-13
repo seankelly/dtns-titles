@@ -104,14 +104,13 @@
         }
 
         clear_results();
-        var found = 0;
+        var matched_episodes = [];
         for (var episode of titles) {
             if (compare_fn(query, episode)) {
-                add_result(episode);
-                found++;
+                matched_episodes.push(episode);
             }
         }
-        update_results_count(found);
+        add_results(matched_episodes);
     }
 
     function query_type_exact(query, episode) {
@@ -143,33 +142,53 @@
         return true;
     }
 
-    function add_result(episode) {
-        var episode_data = raw_titles[episode._show][episode._index];
+    function add_results(episodes) {
+        // Display the episodes so the newest shows up at the top with the
+        // oldest at the bottom.
+        var compare = function(a, b) {
+            var a_date = raw_titles[a._show][a._index].date;
+            var b_date = raw_titles[b._show][b._index].date;
+            if (a_date < b_date) {
+                return 1;
+            }
+            else if (a_date > b_date) {
+                return -1;
+            }
+            return 0;
+        };
+
+        episodes.sort(compare)
+
         var results = document.getElementById("results");
         var fragment = document.createDocumentFragment();
-        var row = document.createElement("tr");
-        fragment.appendChild(row);
-        // episode number
-        var number = document.createElement("td");
-        number.innerText = SHOW_MAP[episode._show] + " " + episode_data.number;
-        // episode title
-        var title = document.createElement("td");
-        title.innerText = episode_data.title;
-        // episode date
-        var date = document.createElement("td");
-        date.innerText = episode_data.date;
-        // episode audio link
-        var audio = document.createElement("td");
-        var link = document.createElement("a");
-        link.innerText = "Download";
-        link.href = episode_data.download;
-        audio.appendChild(link);
+        for (var episode of episodes) {
+            var episode_data = raw_titles[episode._show][episode._index];
+            var row = document.createElement("tr");
+            fragment.appendChild(row);
+            // episode number
+            var number = document.createElement("td");
+            number.innerText = SHOW_MAP[episode._show] + " " + episode_data.number;
+            // episode title
+            var title = document.createElement("td");
+            title.innerText = episode_data.title;
+            // episode date
+            var date = document.createElement("td");
+            date.innerText = episode_data.date;
+            // episode audio link
+            var audio = document.createElement("td");
+            var link = document.createElement("a");
+            link.innerText = "Download";
+            link.href = episode_data.download;
+            audio.appendChild(link);
 
-        row.appendChild(number);
-        row.appendChild(title);
-        row.appendChild(date);
-        row.appendChild(audio);
+            row.appendChild(number);
+            row.appendChild(title);
+            row.appendChild(date);
+            row.appendChild(audio);
+        }
         results.children[1].appendChild(fragment);
+
+        update_results_count(episodes.length);
     }
 
     function clear_results() {
