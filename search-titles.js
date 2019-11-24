@@ -5,6 +5,7 @@
         buzzoutloud: "BOL",
         technewstoday: "TNT",
         dailytechnewsshow: "DTNS",
+        gooddayinternet: "GDI",
     };
 
     // The title data, unmanipulated.
