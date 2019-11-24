@@ -48,7 +48,7 @@ class ShowFeed:
         self.episodes = episodes
 
     def add_new_shows(self, show_key, all_shows):
-        show_episodes = all_shows[show_key]
+        show_episodes = all_shows.get(show_key, [])
         known_episodes = {episode['number'] for episode in show_episodes}
         new_episodes = []
         for feed_episode in self.episodes:
