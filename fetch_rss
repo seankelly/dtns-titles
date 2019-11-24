@@ -10,69 +10,76 @@ from lxml import etree
 import requests
 
 DTNS_RSS_URL = 'https://feeds.feedburner.com/DailyTechNewsShow'
-DTNS_NUMBER = re.compile(r'DTNS (\d+)')
 
 
-def dtns_extra_title(raw_title):
-    """Extract the DTNS episode number and title from the full title."""
-    episode_match = DTNS_NUMBER.search(raw_title)
-    if episode_match:
-        episode_number = int(episode_match.group(1))
-        start = episode_match.start()
-        end = episode_match.end()
-        raw_title = raw_title[0:start] + raw_title[end:]
-        title = raw_title.strip(' -–')
-        return episode_number, title
+class ShowFeed:
 
+    def __init__(self, show_name, feed_url):
+        self.show_name = show_name
+        self.feed_url = feed_url
+        self.show_number = re.compile(r'{} (\d+)'.format(show_name))
+        self.episodes = []
 
-def dtns_load_feed():
-    """Parse all episodes found in the feed."""
-    feed_req = requests.get(DTNS_RSS_URL)
-    feed_tree = etree.fromstring(feed_req.content)
-    episodes = []
-    feed_episodes = feed_tree.xpath('//item')
-    for episode in feed_episodes:
-        raw_title_el = episode.find('title')
-        raw_title = raw_title_el.text
-        dtns_title = dtns_extra_title(raw_title)
-        if dtns_title:
-            episode_number, title = dtns_title
-        else:
-            # Skip unknown episodes. This is run in a cron so minimize output.
-            continue
-        enclosure = episode.find('enclosure')
-        pub_date = episode.find('pubDate')
-        air_date = parser.parse(pub_date.text)
-        audio = enclosure.get('url')
-        episodes.append({
-            'number': episode_number,
-            'title': title,
-            'date': air_date.strftime('%Y-%m-%d'),
-            'download': audio,
-        })
-    return episodes
+    def load_feed(self):
+        """Parse all episodes found in the feed."""
+        feed_req = requests.get(self.feed_url)
+        feed_tree = etree.fromstring(feed_req.content)
+        episodes = []
+        feed_episodes = feed_tree.xpath('//item')
+        for episode in feed_episodes:
+            raw_title_el = episode.find('title')
+            raw_title = raw_title_el.text
+            show_title = self._extract_title(raw_title)
+            if show_title:
+                episode_number, title = show_title
+            else:
+                # Skip unknown episodes. This is run in a cron so minimize output.
+                continue
+            enclosure = episode.find('enclosure')
+            pub_date = episode.find('pubDate')
+            air_date = parser.parse(pub_date.text)
+            audio = enclosure.get('url')
+            episodes.append({
+                'number': episode_number,
+                'title': title,
+                'date': air_date.strftime('%Y-%m-%d'),
+                'download': audio,
+            })
+        self.episodes = episodes
 
+    def add_new_shows(self, show_key, all_shows):
+        show_episodes = all_shows[show_key]
+        known_episodes = {episode['number'] for episode in show_episodes}
+        new_episodes = []
+        for feed_episode in self.episodes:
+            if feed_episode['number'] not in known_episodes:
+                new_episodes.append(feed_episode)
+        new_episodes.sort(key=lambda episode: episode['number'])
+        if new_episodes:
+            for new_episode in new_episodes:
+                print("Adding new %s episode %d - %s" % (
+                    self.show_name, new_episode['number'], new_episode['title']))
+            show_episodes.extend(new_episodes)
+        return len(new_episodes) > 0
 
-def dtns_add_episodes(dtns_episodes):
-    feed_episodes = dtns_load_feed()
-    known_episodes = {episode['number'] for episode in dtns_episodes}
-    new_episodes = []
-    for feed_episode in feed_episodes:
-        if feed_episode['number'] not in known_episodes:
-            new_episodes.append(feed_episode)
-    new_episodes.sort(key=lambda episode: episode['number'])
-    if new_episodes:
-        for new_episode in new_episodes:
-            print("Adding new episode %d - %s" % (new_episode['number'],
-                                                  new_episode['title']))
-        dtns_episodes.extend(new_episodes)
-    return len(new_episodes) > 0
+    def _extract_title(self, raw_title):
+        """Extract the episode number and title from the full title."""
+        episode_match = self.show_number.search(raw_title)
+        if episode_match:
+            episode_number = int(episode_match.group(1))
+            start = episode_match.start()
+            end = episode_match.end()
+            raw_title = raw_title[0:start] + raw_title[end:]
+            title = raw_title.strip(' -–')
+            return episode_number, title
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch new DTNS titles")
+    parser = argparse.ArgumentParser(description="Fetch new DTNS or GDI titles")
     parser.add_argument('--output', default='titles.json',
                         help="Output file for the titles.")
+    parser.add_argument('--patreon-rss',
+                        help="Patreon RSS feed")
     args = parser.parse_args()
 
     if os.path.exists(args.output):
@@ -81,9 +88,19 @@ def main():
     else:
         episodes = {}
 
-    found_new_episodes = dtns_add_episodes(episodes['dailytechnewsshow'])
+    # Search DTNS first.
+    dtns = ShowFeed('DTNS', DTNS_RSS_URL)
+    dtns.load_feed()
+    new_dtns = dtns.add_new_shows('dailytechnewsshow', episodes)
+    # Support loading GDI episodes if a Patreon RSS feed is given. It is
+    # assumed it only contains GDI episodes.
+    new_gdi = False
+    if args.patreon_rss:
+        gdi = ShowFeed('GDI', args.patreon_rss)
+        gdi.load_feed()
+        new_gdi = gdi.add_new_shows('gooddayinternet', episodes)
 
-    if found_new_episodes:
+    if new_dtns or new_gdi:
         with open(args.output, 'w') as output:
             json.dump(episodes, output)
 
