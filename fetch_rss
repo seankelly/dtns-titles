@@ -14,9 +14,13 @@ DTNS_RSS_URL = 'https://feeds.feedburner.com/DailyTechNewsShow'
 
 class ShowFeed:
 
-    def __init__(self, show_name, feed_url):
+    def __init__(self, show_name, feed_url, post_link=False):
         self.show_name = show_name
         self.feed_url = feed_url
+        # Should the episode link to the audio or the post that will contain a
+        # link to the audio? Episodes that require authorization will need to
+        # link to the post to use the right, unexpired auth.
+        self.post_link = post_link
         self.show_number = re.compile(r'{} (\d+)'.format(show_name))
         self.episodes = []
 
@@ -35,15 +39,19 @@ class ShowFeed:
             else:
                 # Skip unknown episodes. This is run in a cron so minimize output.
                 continue
-            enclosure = episode.find('enclosure')
             pub_date = episode.find('pubDate')
             air_date = parser.parse(pub_date.text)
-            audio = enclosure.get('url')
+            if not self.post_link:
+                enclosure = episode.find('enclosure')
+                download_link = enclosure.get('url')
+            else:
+                link = episode.find('link')
+                download_link = link.text
             episodes.append({
                 'number': episode_number,
                 'title': title,
                 'date': air_date.strftime('%Y-%m-%d'),
-                'download': audio,
+                'download': download_link,
             })
         self.episodes = episodes
 
@@ -98,7 +106,7 @@ def main():
     # assumed it only contains GDI episodes.
     new_gdi = False
     if args.patreon_rss:
-        gdi = ShowFeed('GDI', args.patreon_rss)
+        gdi = ShowFeed('GDI', args.patreon_rss, post_link=True)
         gdi.load_feed()
         new_gdi = gdi.add_new_shows('gooddayinternet', episodes)
 
