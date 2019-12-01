@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import json
 import os.path
 import re
@@ -10,6 +11,13 @@ from lxml import etree
 import requests
 
 DTNS_RSS_URL = 'https://feeds.feedburner.com/DailyTechNewsShow'
+PATREON_URL = 'https://www.patreon.com'
+SHOW_MAP = {
+    'BOL': 'buzzoutloud',
+    'TNT': 'technewstoday',
+    'DTNS': 'dailytechnewsshow',
+    'GDI': 'gooddayinternet',
+}
 
 
 class ShowFeed:
@@ -123,20 +131,17 @@ class ShowFeed:
             return episode_number, title
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Fetch new DTNS or GDI titles")
-    parser.add_argument('--output', default='titles.json',
-                        help="Output file for the titles.")
-    parser.add_argument('--patreon-rss',
-                        help="Patreon RSS feed")
-    args = parser.parse_args()
+def mode_csv(args, episodes):
+    show_name = args.show_name
+    show_csv_file = args.csv_file
+    show = ShowFeed(show_name, None)
+    show.load_csv(show_csv_file)
+    show_key = SHOW_MAP[show_name]
+    new_shows = show.add_new_shows(show_key, episodes)
+    return new_shows
 
-    if os.path.exists(args.output):
-        with open(args.output, 'r') as input:
-            episodes = json.load(input)
-    else:
-        episodes = {}
 
+def mode_update(args, episodes):
     # Search DTNS first.
     dtns = ShowFeed('DTNS', DTNS_RSS_URL)
     dtns.load_feed()
@@ -148,8 +153,37 @@ def main():
         gdi = ShowFeed('GDI', args.patreon_rss, post_link=True)
         gdi.load_feed()
         new_gdi = gdi.add_new_shows('gooddayinternet', episodes)
+    return new_dtns or new_gdi
 
-    if new_dtns or new_gdi:
+
+def main():
+    parser = argparse.ArgumentParser(description="Fetch new DTNS or GDI titles")
+    subparsers = parser.add_subparsers(help="sub-command help")
+
+    update = subparsers.add_parser('update', help="Check and update RSS feeds")
+    update.add_argument('--output', default='titles.json',
+                        help="Output file for the titles.")
+    update.add_argument('--patreon-rss', help="Patreon RSS feed")
+    update.set_defaults(mode_fn=mode_update)
+
+    load_csv = subparsers.add_parser('csv', help="Import shows from CSV")
+    load_csv.add_argument('show_name', help="Show title")
+    load_csv.add_argument('csv_file', help="Show CSV file")
+    load_csv.add_argument('--output', default='titles.json',
+                          help="Output file for the titles.")
+    load_csv.set_defaults(mode_fn=mode_csv)
+
+    args = parser.parse_args()
+
+    if os.path.exists(args.output):
+        with open(args.output, 'r') as input:
+            episodes = json.load(input)
+    else:
+        episodes = {}
+
+    new_shows = args.mode_fn(args, episodes)
+
+    if new_shows:
         with open(args.output, 'w') as output:
             json.dump(episodes, output)
 
