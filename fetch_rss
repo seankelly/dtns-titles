@@ -55,22 +55,61 @@ class ShowFeed:
             })
         self.episodes = episodes
 
+    def load_csv(self, show_csv_file):
+        with open(show_csv_file) as show_csv:
+            shows = csv.reader(show_csv)
+            for show in shows:
+                raw_title, pub_date, patreon_show_url = show
+                show_title = self._extract_title(raw_title)
+                if show_title:
+                    episode_number, title = show_title
+                else:
+                    continue
+                post_link = PATREON_URL + patreon_show_url
+                air_date = parser.parse(pub_date)
+                self.episodes.append({
+                    'number': episode_number,
+                    'title': title,
+                    'date': air_date.strftime('%Y-%m-%d'),
+                    'download': post_link,
+                })
+
+
     def add_new_shows(self, show_key, all_shows):
+        def sort_shows(episode):
+            return episode['number']
+
         if show_key not in all_shows:
             all_shows[show_key] = []
         show_episodes = all_shows[show_key]
-        known_episodes = {episode['number'] for episode in show_episodes}
+        known_episodes = {episode['number']: episode['date']
+                          for episode in show_episodes}
         new_episodes = []
+        updated_episodes = {}
         for feed_episode in self.episodes:
-            if feed_episode['number'] not in known_episodes:
+            episode_number = feed_episode['number']
+            if episode_number not in known_episodes:
                 new_episodes.append(feed_episode)
-        new_episodes.sort(key=lambda episode: episode['number'])
+                known_episodes[episode_number] = feed_episode['date']
+            elif known_episodes[episode_number] < feed_episode['date']:
+                if episode_number not in updated_episodes or \
+                   updated_episodes[episode_number]['date'] < feed_episode['date']:
+                    updated_episodes[episode_number] = feed_episode
+        new_episodes.sort(key=sort_shows)
         if new_episodes:
             for new_episode in new_episodes:
                 print("Adding new %s episode %d - %s" % (
                     self.show_name, new_episode['number'], new_episode['title']))
             show_episodes.extend(new_episodes)
-        return len(new_episodes) > 0
+        if updated_episodes:
+            for idx, episode in enumerate(show_episodes):
+                if episode['number'] in updated_episodes:
+                    updated_episode = updated_episodes[episode['number']]
+                    print("Updating %s episode %d - %s" % (
+                        self.show_name, updated_episode['number'], updated_episode['title']))
+                    show_episodes[idx] = updated_episode
+            show_episodes.sort(key=sort_shows)
+        return bool(new_episodes) or bool(updated_episodes)
 
     def _extract_title(self, raw_title):
         """Extract the episode number and title from the full title."""
