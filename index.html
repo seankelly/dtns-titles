@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <title>Tom's Tech News Show Title Search</title>
+        <meta charset="utf-8">
+        <style type="text/css">
+            th, td {
+                padding: 0.2em;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Tom's Tech News Show Title Search</h1>
+        <p>
+            <label>Title substring:</label>
+            <input type="text" id="title-query">
+        </p>
+        <div>
+            <input type="radio" id="query-exact" name="query-type" value="exact">
+            <label for="query-exact">Exact match</label>
+            <input type="radio" id="query-loose" name="query-type" value="loose" checked>
+            <label for="query-loose">Loose match</label>
+            <input type="radio" id="query-wildcard" name="query-type" value="wildcard">
+            <label for="query-wildcard">Wildcard</label>
+            <input type="radio" id="query-wildcard-any" name="query-type" value="wildcard-any">
+            <label for="query-wildcard-any">Wildcard any order</label>
+        </div>
+        <p id="status">Loading data. JavaScript required for site to function.</p>
+        <h2>Previous Titles</h2>
+        <table id="results">
+            <thead>
+                <tr>
+                    <th>Episode Number</th>
+                    <th>Episode Title</th>
+                    <th>Date</th>
+                    <th>Audio Link</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p>Found <span id="results-count">0</span> results.</p>
+        <h2>Help</h2>
+        <h3>Quick Start</h3>
+        <p>
+            Enter some text into the input box to search the titles of all previous shows to find similarly titled episodes.
+            Change the type of search to adjust how specific the search should be.
+        </p>
+        <h3>Search Types</h3>
+        <h4>Exact Match</h4>
+        <p>The search text must match part of the title exactly. Case and punctuation must also match.</p>
+        <h4>Loose Match</h4>
+        <p>A case-insensitive match of the titles. Punctuation is ignored when searching.</p>
+        <h4>Wildcard</h4>
+        <p>Similar to the loose match, but each word can appear with the title in order.</p>
+        <h4>Exact Match</h4>
+        <p>Each word of the search can appear anywhere in the title, including possible overlap.</p>
+        <script async src="search-titles.js" type="text/javascript"></script>
+    </body>
+</html>
