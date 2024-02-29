@@ -1,0 +1,23 @@
+name: Update DTNS, etc. titles
+
+on:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: '45 4,23 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: actions/setup-python@v5
+        with:
+          cache: pipenv
+
+      - name: Fetch gh-pages
+        run: git remote update
