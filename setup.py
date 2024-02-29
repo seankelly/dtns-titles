@@ -9,7 +9,6 @@ setuptools.setup(
     url="https://github.com/pypa/sampleproject",
     packages=setuptools.find_packages(),
     install_requires=[
-        'BeautifulSoup4',
         'lxml',
         'python-dateutil',
         'requests',
