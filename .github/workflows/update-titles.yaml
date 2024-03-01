@@ -17,7 +17,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          cache: pipenv
+          cache: pip
 
       - name: Create Python virtualenv
         run: python3 -m pip install -r requirements.txt
