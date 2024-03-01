@@ -8,6 +8,8 @@ rm -r pages
 
 git config --global user.name 'GitHub Actions'
 git config --global user.email 'seankelly@users.noreply.github.com'
+ls -l *
+git status
 git add .
 if git diff --name-status | grep -q -E '^M' ; then
     git commit --message "Automatic title update"
