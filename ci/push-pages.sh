@@ -3,7 +3,7 @@
 set -eu
 
 git switch gh-pages
-cp -a pages/*
+cp -a pages/* .
 rm -r pages
 
 git config --global user.name 'GitHub Actions'
