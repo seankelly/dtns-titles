@@ -3,6 +3,7 @@
 set -eux
 
 git switch gh-pages
+ls -l * pages
 cp -a pages/* .
 rm -r pages
 
