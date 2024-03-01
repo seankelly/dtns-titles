@@ -22,5 +22,11 @@ jobs:
       - name: Create Python virtualenv
         run: python3 -m pip install -r requirements.txt
 
-      - name: Fetch gh-pages
-        run: git remote update
+      - name: Fetch current gh-pages
+        run: ci/get-pages.sh
+
+      - name: Update titles
+        run: ci/update.sh
+
+      - name: Push pages
+        run: ci/push-pages.sh
