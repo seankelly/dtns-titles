@@ -27,6 +27,8 @@ jobs:
 
       - name: Update titles
         run: ci/update.sh
+        env:
+          PATREON_RSS: ${{ secrets.PATREON_RSS }}
 
       - name: Push pages
         run: ci/push-pages.sh
