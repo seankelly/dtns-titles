@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eu
+set -eux
 
 git switch gh-pages
 cp -a pages/* .
