@@ -179,7 +179,9 @@
             var audio = document.createElement("td");
             var link = document.createElement("a");
             link.innerText = "Download";
-            link.href = episode_data.download;
+            if (episode_data !== undefined) {
+                link.href = episode_data.download;
+            }
             audio.appendChild(link);
 
             row.appendChild(number);

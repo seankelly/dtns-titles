@@ -49,9 +49,11 @@ class ShowFeed:
                 continue
             pub_date = episode.find('pubDate')
             air_date = parser.parse(pub_date.text)
+            download_link = None
             if not self.post_link:
                 enclosure = episode.find('enclosure')
-                download_link = enclosure.get('url')
+                if enclosure:
+                    download_link = enclosure.get('url')
             else:
                 link = episode.find('link')
                 download_link = link.text
