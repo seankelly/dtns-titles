@@ -52,7 +52,7 @@ class ShowFeed:
             download_link = None
             if not self.post_link:
                 enclosure = episode.find('enclosure')
-                if enclosure:
+                if enclosure is not None:
                     download_link = enclosure.get('url')
             else:
                 link = episode.find('link')
